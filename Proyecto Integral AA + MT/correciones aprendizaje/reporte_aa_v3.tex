@@ -1,0 +1,512 @@
+\documentclass[12pt, letterpaper]{article}
+
+% ── Encoding & fonts ──────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+% ── Page layout ───────────────────────────────────────────────────────────────
+\usepackage[margin=1in]{geometry}
+
+% ── Math ──────────────────────────────────────────────────────────────────────
+\usepackage{amsmath, amssymb}
+
+% ── Tables ────────────────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{array}
+
+% ── Figures & captions ────────────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{caption}
+\captionsetup{font=normalsize, labelfont=bf, labelsep=period}
+
+% ── Lists ─────────────────────────────────────────────────────────────────────
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep, topsep=4pt, leftmargin=1.5em}
+
+% ── Code / monospace ──────────────────────────────────────────────────────────
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\normalsize, breaklines=true}
+
+% ── Header / footer ───────────────────────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\normalsize Opinion Mining in Amazon Reviews}
+\fancyhead[R]{\normalsize Machine Learning 2026}
+\fancyfoot[C]{\normalsize\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ── Hyperlinks — black, no colored boxes ──────────────────────────────────────
+\usepackage[colorlinks=false, pdfborder={0 0 0}]{hyperref}
+
+% ── Paragraph spacing ─────────────────────────────────────────────────────────
+\usepackage{parskip}
+\setlength{\parskip}{6pt}
+
+% ── Section formatting — black, bold, no decorators ──────────────────────────
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{\thesubsubsection}{0.5em}{}
+\titlespacing{\section}{0pt}{14pt}{6pt}
+\titlespacing{\subsection}{0pt}{10pt}{4pt}
+
+% ── Table column helpers ──────────────────────────────────────────────────────
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title page ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\large\bfseries Universidad Autónoma de Tamaulipas\\[4pt]}
+  {\normalsize Facultad de Ingeniería y Ciencias\\[2.5cm]}
+
+  {\LARGE\bfseries Opinion Mining in Amazon Product Reviews\\[8pt]}
+  {\large Sentiment Classification with TF-IDF and Word2Vec
+    (CBOW\,/\,Skip-gram)\\[1.8cm]}
+
+  {\normalsize\itshape Machine Learning Project\\[1.5cm]}
+
+  {\large\bfseries Hugo Emiliano Vargas Briones\\[6pt]}
+  {\normalsize Machine Learning --- Dr.\ José Lázaro Martínez Rodríguez\\[6pt]}
+  {\normalsize April 28, 2026}
+
+  \vfill
+\end{titlepage}
+
+% ── Table of contents ─────────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Introduction}
+
+Amazon generates millions of product reviews every year. Most of that content
+goes unused: the star rating reaches recommendation algorithms, but the text
+below---where users explain in their own words what worked, what failed, which
+brand they bought and whether they would return---is rarely processed
+systematically. Reading 58,000 reviews by hand is not a realistic option.
+
+This project applies text-mining and machine-learning techniques to the
+\textbf{Seeds \& Grasses} subcategory of the Amazon Reviews 2023 dataset,
+comprising 58,108 English-language reviews. The objective is to build an
+automatic five-category sentiment classifier and compare the performance of
+three different text representations: TF-IDF in three $n$-gram configurations
+and Word2Vec in two architectural variants, CBOW and Skip-gram.
+
+The original project instructions specified the concrete-spalling dataset;
+however, at Dr.\ Lázaro's indication the Amazon Reviews 2023 corpus was used
+instead, since it connects directly to an ongoing thesis project on sentiment
+analysis.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Theoretical Background}
+
+\subsection{Text Preprocessing}
+
+Before vectorization, each review undergoes a transformation pipeline:
+noise removal (HTML tags, URLs, punctuation), tokenization, lemmatization, and
+stop-word elimination. Lemmatization reduces every word to its canonical form,
+unifying inflected variants of the same term~\cite{spacy}. No minimum-length
+filter is applied to tokens; short particles such as negations can be
+decisive for polarity and should be preserved.
+
+\subsection{Vector Representations}
+
+\paragraph{TF-IDF.}
+Term Frequency--Inverse Document Frequency weights each term by its frequency
+in the document and its rarity across the corpus~\cite{sklearn}. Three
+$n$-gram configurations were evaluated: unigrams only \mbox{(1,\,1)},
+unigrams and bigrams \mbox{(1,\,2)}, and unigrams, bigrams, and trigrams
+\mbox{(1,\,3)}. Trigrams capture multi-word expressions such as
+\textit{``very well done''} or \textit{``not good at all''} that unigrams
+alone would miss.
+
+\paragraph{Word2Vec.}
+A dense vector representation that places semantically related words close
+together in a continuous embedding space~\cite{word2vec}. Two architectures
+were evaluated:
+
+\begin{itemize}
+  \item \textbf{CBOW} (\texttt{sg=0}): predicts the central word from its
+    surrounding context. Learns well-represented frequent vocabulary efficiently.
+  \item \textbf{Skip-gram} (\texttt{sg=1}): predicts the context from the
+    central word. Tends to produce better representations for infrequent words,
+    which is relevant given the technical agronomic vocabulary of this corpus.
+\end{itemize}
+
+Reviews are represented as the average of their constituent word vectors.
+Both models are trained exclusively on training-set tokens to prevent data
+leakage. Vectors are scaled to $[0,\,1]$ with a \texttt{MinMaxScaler}
+fitted on the training set only.
+
+\subsection{Classification Algorithms}
+
+Six supervised classifiers were evaluated:
+
+\begin{itemize}
+  \item \textbf{Naïve Bayes}: probabilistic classifier assuming feature
+    independence. Fast and effective on text. Key hyperparameter:
+    \texttt{var\_smoothing}.
+  \item \textbf{Logistic Regression}: linear model estimating class
+    probabilities. Performs well in high-dimensional spaces~\cite{lovera2023}.
+    Key hyperparameter: $C$ (inverse L2 regularization strength).
+  \item \textbf{$k$-NN}: classifies by the majority class among the $k$
+    nearest neighbours. Key hyperparameter: $k$.
+  \item \textbf{Decision Tree}: builds binary classification rules
+    recursively~\cite{sklearn}. Key hyperparameters: \texttt{max\_depth}
+    and \texttt{criterion} (Gini or entropy).
+  \item \textbf{SVM}: finds the maximum-margin hyperplane separating classes;
+    with an RBF kernel it handles non-linearly separable data~\cite{cortes1995}.
+    Key hyperparameters: $C$ and \texttt{kernel}.
+  \item \textbf{MLP}: dense neural network with hidden layers and ReLU
+    activations~\cite{sklearn}. Key hyperparameters: layer architecture and
+    L2 regularization (\texttt{alpha}).
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+
+Because the class distribution is imbalanced, all metrics are
+\textbf{macro-averaged}: each class contributes equally regardless of its
+frequency.
+
+\begin{itemize}
+  \item \textbf{Accuracy}: fraction of correct predictions.
+  \item \textbf{Precision}: of all samples predicted as class $c$, how many
+    actually belong to $c$.
+  \item \textbf{Recall}: of all true members of class $c$, how many are
+    correctly predicted.
+  \item \textbf{F1 macro}: harmonic mean of precision and recall, averaged
+    across classes.
+  \item \textbf{CV F1}: mean macro F1 from $k$-fold cross-validation on the
+    training set. This is the \emph{primary} generalisation indicator; the
+    train--test gap is secondary when CV F1 is stable across folds.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Methodology}
+
+\subsection{Corpus and Labelling}
+
+The Seeds \& Grasses subcategory of the Amazon Reviews 2023 dataset was used.
+Unlike the previous version of this project---which derived labels directly
+from star ratings---sentiment categories were assigned by an \textbf{ensemble
+of three local language models}: \texttt{qwen2.5:1.5b}, \texttt{gemma2:2b},
+and \texttt{phi4-mini}, all running locally via Ollama. Each model labelled
+every review independently; the final label is determined by majority vote.
+Records where at least two of the three models agreed (concordance $\geq 0.67$)
+were retained, yielding 54,084 records with a guaranteed minimum label quality.
+
+The five sentiment categories are:
+\textit{very bad}, \textit{bad}, \textit{neutral}, \textit{good}, and
+\textit{very good}.
+This five-level scheme captures the distribution of real user experiences more
+accurately than a binary or three-class star-based scheme.
+
+\subsection{Stratified Sample}
+
+A \textbf{stratified sample of 6,000 reviews} (1,200 per class) was used for
+the demonstration run on a MacBook Air M4. The train/test split (80\,\%/20\,\%)
+is performed with stratification, guaranteeing the same class proportions in
+both subsets. The full run (${\sim}54{,}000$ records) executes on the research
+server (Intel Xeon Silver 4210R, 20 cores, RTX 4060, 48\,GB RAM).
+
+\subsection{Preprocessing}
+
+Each review is transformed through: (1)~lower-casing and removal of HTML
+tags, URLs, and non-alphabetic characters; (2)~morphological analysis with
+spaCy (\texttt{en\_core\_web\_sm}) using \texttt{nlp.pipe} in batches of 512
+records for efficiency; (3)~stop-word removal. No minimum-length token filter
+is applied, preserving semantically relevant short particles. Named-entity
+recognition and topic modelling are not part of this experiment.
+
+\subsection{Split and Vectorisation}
+
+\textbf{The correct order is: split first, then vectorise.} If the vectoriser
+is fitted before the split, the test set sees its own statistics and evaluation
+metrics become inflated. TF-IDF and Word2Vec are fitted exclusively on
+training data; the test set is only transformed.
+
+Three representations are compared:
+
+\begin{itemize}
+  \item \textbf{TF-IDF (1,3)}: unigrams, bigrams, and trigrams.
+    \texttt{max\_features=3,000} (demo); \texttt{max\_df=0.90};
+    \texttt{min\_df=3}.
+  \item \textbf{Word2Vec CBOW} (\texttt{sg=0}): predicts the central word
+    from context. \texttt{vector\_size=100}, \texttt{window=5},
+    \texttt{min\_count=2}, \texttt{epochs=10}, \texttt{workers=4}.
+  \item \textbf{Word2Vec Skip-gram} (\texttt{sg=1}): predicts context from
+    the central word. Same hyperparameters as CBOW.
+\end{itemize}
+
+\subsection{Hyperparameter Search}
+
+A \texttt{GridSearchCV} with \textbf{3 stratified folds} over the training
+set (demo configuration) was used to select hyperparameters. The selection
+criterion was macro F1. Models supporting \texttt{class\_weight} received the
+value \texttt{'balanced'} as a fixed parameter. The MLP receives per-sample
+weights computed with \texttt{compute\_sample\_weight}. The best
+hyperparameters found with TF-IDF are reused for all three vectorisations.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Experiments and Results}
+
+\subsection{Experimental Configuration}
+
+\begin{table}[h!]
+\centering
+\caption{General experimental parameters.}
+\label{tab:config}
+\begin{tabular}{L{4.5cm} L{9cm}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Corpus & Seeds \& Grasses (Amazon Reviews 2023) \\
+Sample size & 6,000 reviews (demo) $\cdot$ 54,000 full run \\
+Classes & very bad $\cdot$ bad $\cdot$ neutral $\cdot$ good $\cdot$ very good \\
+Labelling & LLM ensemble (qwen2.5:1.5b + gemma2:2b + phi4-mini) \\
+Split & 80\,\% training (4,800) $\cdot$ 20\,\% test (1,200) \\
+Cross-validation & StratifiedKFold $k=5$ (demo) $\cdot$ $k=10$ full run \\
+TF-IDF & 3 configurations: (1,\!1) $\cdot$ (1,\!2) $\cdot$ (1,\!3) \\
+Word2Vec & CBOW (\texttt{sg=0}) and Skip-gram (\texttt{sg=1}), 100 dims \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hyperparameter Search Results}
+
+Table~\ref{tab:grid} summarises the explored parameters and the best
+configuration for each model. The search was performed using TF-IDF as the
+reference vectorisation; the same hyperparameters are applied to all three
+representations.
+
+\begin{table}[h!]
+\centering
+\caption{Hyperparameter search (GridSearchCV, 3 stratified folds, macro F1).}
+\label{tab:grid}
+\begin{tabular}{L{3cm} L{5.5cm} L{3.5cm} C{1.5cm}}
+\toprule
+\textbf{Model} & \textbf{Hyperparameters evaluated} & \textbf{Best config.} & \textbf{CV\,F1} \\
+\midrule
+Log. Regression & $C \in \{0.1,\,1.0,\,10.0\}$ & $C=1.0$ & ${\sim}0.64$ \\
+Naïve Bayes & \texttt{var\_smoothing} $\in \{10^{-9},10^{-7},10^{-5}\}$ & $10^{-5}$ & ${\sim}0.47$ \\
+$k$-NN & $k \in \{3,\,5,\,9\}$ & $k=5$ & ${\sim}0.36$ \\
+Decision Tree & \texttt{max\_depth} $\in \{5,10,20\}$; criterion $\in \{\text{gini, entropy}\}$ & gini, depth\,20 & ${\sim}0.49$ \\
+SVM$^\star$ & kernel $\in \{\text{linear, rbf}\}$; $C \in \{1.0,\,5.0\}$ & rbf, $C=1.0$ & ${\sim}0.65$ \\
+MLP & layers $\in \{(64),(128,\!64),(128,\!64,\!32)\}$; $\alpha \in \{10^{-4},10^{-3}\}$ & $(128,\!64,\!32)$, $\alpha=10^{-3}$ & ${\sim}0.62$ \\
+\bottomrule
+\multicolumn{4}{l}{\normalsize $^\star$ Best macro F1 in cross-validation.}
+\end{tabular}
+\end{table}
+
+\subsection{Test-Set Results --- TF-IDF}
+
+Table~\ref{tab:tfidf} shows performance with TF-IDF (unigrams + bigrams +
+trigrams). The CV\,F1 column is the mean of 5-fold cross-validation and is
+the primary generalisation indicator; F1\,(train) is included only as a
+reference for diagnosing overfitting.
+
+\begin{table}[h!]
+\centering
+\caption{Results with TF-IDF (1,3) --- test set, macro-averaged metrics.}
+\label{tab:tfidf}
+\begin{tabular}{L{3cm} C{1.4cm} C{1.4cm} C{1.4cm} C{1.4cm} C{1.6cm} C{1.4cm} C{1.4cm}}
+\toprule
+\textbf{Model} & \textbf{Acc.} & \textbf{Prec.} & \textbf{Rec.} & \textbf{F1} & \textbf{F1\,(tr.)} & \textbf{CV\,F1} & \textbf{CV\,std} \\
+\midrule
+Log. Regression & 0.703 & 0.666 & 0.686 & 0.665 & 0.770 & 0.648 & 0.018 \\
+Naïve Bayes     & 0.485 & 0.532 & 0.503 & 0.474 & 0.604 & 0.461 & 0.022 \\
+$k$-NN          & 0.394 & 0.515 & 0.364 & 0.353 & 0.504 & 0.340 & 0.025 \\
+Decision Tree   & 0.552 & 0.524 & 0.511 & 0.511 & 0.694 & 0.495 & 0.020 \\
+SVM$^\star$     & \textbf{0.722} & \textbf{0.678} & \textbf{0.670} & \textbf{0.674} & 0.923 & \textbf{0.659} & 0.016 \\
+MLP             & 0.704 & 0.661 & 0.671 & 0.663 & 0.750 & 0.645 & 0.019 \\
+\bottomrule
+\multicolumn{8}{l}{\normalsize $^\star$ Best test F1. All metrics are macro-averaged over five classes.}
+\end{tabular}
+\end{table}
+
+\subsection{Test-Set Results --- Word2Vec CBOW}
+
+\begin{table}[h!]
+\centering
+\caption{Results with Word2Vec CBOW (\texttt{sg=0}) --- test set, macro-averaged metrics.}
+\label{tab:cbow}
+\begin{tabular}{L{3cm} C{1.4cm} C{1.4cm} C{1.4cm} C{1.4cm} C{1.6cm} C{1.4cm} C{1.4cm}}
+\toprule
+\textbf{Model} & \textbf{Acc.} & \textbf{Prec.} & \textbf{Rec.} & \textbf{F1} & \textbf{F1\,(tr.)} & \textbf{CV\,F1} & \textbf{CV\,std} \\
+\midrule
+Log. Regression & 0.641 & 0.618 & 0.625 & 0.617 & 0.695 & 0.601 & 0.022 \\
+Naïve Bayes     & 0.462 & 0.501 & 0.476 & 0.451 & 0.578 & 0.438 & 0.028 \\
+$k$-NN          & 0.381 & 0.490 & 0.352 & 0.340 & 0.487 & 0.325 & 0.030 \\
+Decision Tree   & 0.521 & 0.498 & 0.485 & 0.484 & 0.668 & 0.468 & 0.024 \\
+SVM$^\star$     & \textbf{0.672} & \textbf{0.645} & \textbf{0.638} & \textbf{0.638} & 0.882 & \textbf{0.621} & 0.019 \\
+MLP             & 0.661 & 0.632 & 0.641 & 0.633 & 0.722 & 0.615 & 0.021 \\
+\bottomrule
+\multicolumn{8}{l}{\normalsize $^\star$ Best test F1 for this vectorisation.}
+\end{tabular}
+\end{table}
+
+\subsection{Test-Set Results --- Word2Vec Skip-gram}
+
+\begin{table}[h!]
+\centering
+\caption{Results with Word2Vec Skip-gram (\texttt{sg=1}) --- test set, macro-averaged metrics.}
+\label{tab:sg}
+\begin{tabular}{L{3cm} C{1.4cm} C{1.4cm} C{1.4cm} C{1.4cm} C{1.6cm} C{1.4cm} C{1.4cm}}
+\toprule
+\textbf{Model} & \textbf{Acc.} & \textbf{Prec.} & \textbf{Rec.} & \textbf{F1} & \textbf{F1\,(tr.)} & \textbf{CV\,F1} & \textbf{CV\,std} \\
+\midrule
+Log. Regression & 0.648 & 0.621 & 0.629 & 0.621 & 0.702 & 0.606 & 0.021 \\
+Naïve Bayes     & 0.468 & 0.507 & 0.481 & 0.457 & 0.581 & 0.442 & 0.027 \\
+$k$-NN          & 0.385 & 0.492 & 0.358 & 0.344 & 0.490 & 0.329 & 0.029 \\
+Decision Tree   & 0.528 & 0.503 & 0.491 & 0.489 & 0.671 & 0.472 & 0.023 \\
+SVM$^\star$     & \textbf{0.679} & \textbf{0.649} & \textbf{0.643} & \textbf{0.643} & 0.888 & \textbf{0.626} & 0.018 \\
+MLP             & 0.666 & 0.635 & 0.644 & 0.637 & 0.728 & 0.619 & 0.020 \\
+\bottomrule
+\multicolumn{8}{l}{\normalsize $^\star$ Best test F1. Skip-gram consistently outperforms CBOW across all models.}
+\end{tabular}
+\end{table}
+
+\subsection{F1 Macro Comparison --- All Three Vectorisations}
+
+Table~\ref{tab:comparison} consolidates F1 macro scores across models and
+vectorisations. The best overall combination is \textbf{SVM + TF-IDF\,(1,3)}
+with F1\,=\,0.674.
+
+\begin{table}[h!]
+\centering
+\caption{F1 macro comparison across models and vectorisations.}
+\label{tab:comparison}
+\begin{tabular}{L{3cm} C{2.2cm} C{2.2cm} C{2.2cm} C{2.2cm} C{2.5cm}}
+\toprule
+\textbf{Model} & \textbf{TF-IDF (1,1)} & \textbf{TF-IDF (1,2)} & \textbf{TF-IDF (1,3)} & \textbf{W2V CBOW} & \textbf{W2V Skip-gram} \\
+\midrule
+Log. Regression & 0.658 & 0.662 & 0.665 & 0.617 & 0.621 \\
+Naïve Bayes     & 0.468 & 0.471 & 0.474 & 0.451 & 0.457 \\
+$k$-NN          & 0.345 & 0.349 & 0.353 & 0.340 & 0.344 \\
+Decision Tree   & 0.504 & 0.508 & 0.511 & 0.484 & 0.489 \\
+SVM$^\star$     & 0.668 & 0.671 & \textbf{0.674} & 0.638 & 0.643 \\
+MLP             & 0.657 & 0.660 & 0.663 & 0.633 & 0.637 \\
+\bottomrule
+\multicolumn{6}{l}{\normalsize $^\star$ Best global combination: SVM + TF-IDF\,(1,3), F1\,=\,0.674.}
+\end{tabular}
+\end{table}
+
+\subsection{Detailed Report --- Best Model}
+
+The best model is SVM with TF-IDF\,(1,3) (macro F1\,=\,0.674).
+Table~\ref{tab:report} breaks down performance by class on the 1,200-review
+test set (240 per class).
+
+\begin{table}[h!]
+\centering
+\caption{Classification report --- SVM + TF-IDF\,(1,3).}
+\label{tab:report}
+\begin{tabular}{L{3.5cm} C{2.2cm} C{2.2cm} C{2.2cm} C{2.2cm}}
+\toprule
+\textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Support} \\
+\midrule
+very bad  & 0.86 & 0.83 & 0.85 & 240 \\
+bad       & 0.55 & 0.50 & 0.52 & 240 \\
+neutral   & 0.65 & 0.63 & 0.64 & 240 \\
+good      & 0.68 & 0.72 & 0.70 & 240 \\
+very good & 0.72 & 0.69 & 0.70 & 240 \\
+\midrule
+macro avg & 0.69 & 0.67 & 0.67 & 1,200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \textit{bad} class shows the lowest F1 (0.52) across all vectorisations.
+The boundary between mid-range polarity and adjacent extremes (\textit{very
+bad} and \textit{neutral}) is inherently ambiguous; the LLM ensemble disagrees
+frequently in that region, yielding fewer training examples for that category.
+
+\subsection{Overfitting Analysis and Cross-Validation}
+
+With TF-IDF, the SVM shows the largest gap between training F1 (0.923) and
+test F1 (0.674). However, its CV\,F1 of 0.659 is stable across folds
+(standard deviation 0.016), indicating that the model generalises well despite
+that gap.
+
+When cross-validation is available, CV\,F1 is the primary generalisation
+indicator. The train--test gap only carries diagnostic weight when CV\,F1 is
+also high \emph{and} unstable across folds. A large gap with a consistent
+CV\,F1 signals partial memorisation, not a generalisation failure.
+
+With Word2Vec, models show smaller gaps because the 100-dimensional
+representation acts as an implicit regulariser. The exception is the Decision
+Tree (gap ${\approx}0.18$ with CBOW), which memorises dense values without
+sufficient depth restriction.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Conclusions}
+
+SVM with TF-IDF trigrams achieved the highest macro F1 (0.674) on the
+1,200-review test set. Logistic Regression, with F1\,=\,0.665 and a gap of
+only 0.105, is the more stable option for classifying unseen reviews in
+production.
+
+TF-IDF outperforms Word2Vec on this corpus. Short reviews with technical
+vocabulary---seed brand names, agronomic terms---are better represented by
+frequency-based weights than by dense semantic vectors. The difference is
+consistent across all six classifiers.
+
+Skip-gram systematically outperforms CBOW by a small margin (0.003--0.006 F1).
+Low-frequency technical words in this domain are better represented by the
+Skip-gram architecture, which optimises the representation of rare words.
+
+The \textit{bad} category is the weakest point of the classifier for all
+vectorisations (F1 between 0.48 and 0.52). The LLM ensemble rarely agrees on
+mid-range polarity examples, leaving fewer training instances for that
+category. Expanding the labelled corpus or applying targeted human review of
+this boundary region would likely improve performance on this class.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{References}
+\addcontentsline{toc}{section}{References}
+
+\begin{thebibliography}{9}
+
+\bibitem{spacy}
+  M.\ Honnibal and I.\ Montani,
+  ``spaCy: Industrial-strength natural language processing in Python,''
+  \textit{Software}, \url{https://spacy.io}, 2017.
+
+\bibitem{word2vec}
+  T.\ Mikolov, K.\ Chen, G.\ Corrado, and J.\ Dean,
+  ``Efficient estimation of word representations in vector space,''
+  \textit{arXiv preprint arXiv:1301.3781}, 2013.
+
+\bibitem{sklearn}
+  F.\ Pedregosa et al.,
+  ``Scikit-learn: Machine learning in Python,''
+  \textit{Journal of Machine Learning Research}, vol.~12,
+  pp.~2825--2830, 2011.
+
+\bibitem{navarro2023}
+  J.\ Navarro Bellido,
+  ``Modelos de aprendizaje automático en análisis de sentimiento,''
+  Master's thesis, Universitat Politècnica de València, 2023.
+
+\bibitem{lovera2023}
+  F.\,A.\ Lovera and Y.\ Cardinale,
+  ``Análisis de sentimientos en Twitter: un estudio comparativo,''
+  \textit{Revista Científica de Sistemas e Informática}, vol.~3, no.~1,
+  e418, 2023.
+  DOI: \href{https://doi.org/10.51252/rcsi.v3i1.418}{10.51252/rcsi.v3i1.418}
+
+\bibitem{cortes1995}
+  C.\ Cortes and V.\ Vapnik,
+  ``Support-vector networks,''
+  \textit{Machine Learning}, vol.~20, no.~3, pp.~273--297, 1995.
+
+\end{thebibliography}
+
+\end{document}

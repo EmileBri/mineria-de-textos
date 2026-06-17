@@ -1,0 +1,36 @@
+# Archivos de oficina y presentaciones
+*.docx
+*.pptx
+*.pdf
+*.xlsx
+*.xls
+
+# Imágenes
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+
+# Archivos comprimidos
+*.zip
+*.7z
+*.tar.gz
+*.rar
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.env
+.venv/
+env/
+
+# macOS
+.DS_Store
+
+# Carpetas de trabajo interno
+**/legacy/
+**/.gradio/
